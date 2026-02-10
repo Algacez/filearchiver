@@ -139,6 +139,15 @@
             cursor: not-allowed;
         }
 
+        input[type="text"], input[type="file"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
         select {
             padding: 10px 15px;
             border: 2px solid #e0e0e0;
@@ -279,6 +288,25 @@
             gap: 8px;
         }
 
+        .link-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .page-info {
+            color: #666;
+            font-size: 14px;
+        }
+
         @media (max-width: 768px) {
             .controls-content {
                 flex-direction: column;
@@ -360,19 +388,42 @@
                     <tbody>
                         {% for file in files %}
                             {% set file_url = url_for('download', filepath=current_year + '/' + current_month + '/' + file.name, _external=True) %}
+                            {% set outer_index = loop.index %}
                             <tr>
                                 <td class="file-name">{{ file.name }}</td>
                                 <td class="file-size">{{ file.size | format_size }}</td>
                                 <td class="file-date">{{ file.modified.strftime('%Y-%m-%d %H:%M') }}</td>
                                 <td>
-                                    <div class="link-container">
-                                        <span class="download-link" id="link-{{ loop.index }}">{{ file_url }}</span>
-                                        <button class="btn btn-sm btn-copy" onclick="copyLink('link-{{ loop.index }}', this)">复制</button>
+                                    <div class="link-list">
+                                        <div class="link-container">
+                                            <span class="download-link" id="link-{{ outer_index }}">{{ file_url }}</span>
+                                            <button class="btn btn-sm btn-copy" onclick="copyLink('link-{{ outer_index }}', this)">复制</button>
+                                        </div>
+                                        {% if file.aliases %}
+                                            {% for alias in file.aliases %}
+                                                {% set alias_url = url_for('download', filepath=alias, _external=True) %}
+                                                <div class="link-container">
+                                                    <span class="download-link" id="alias-{{ loop.index }}-{{ outer_index }}">{{ alias_url }}</span>
+                                                    <button class="btn btn-sm btn-copy" onclick="copyLink('alias-{{ loop.index }}-{{ outer_index }}', this)">复制</button>
+                                                </div>
+                                            {% endfor %}
+                                        {% endif %}
+                                        {% if file.source_url %}
+                                            <div class="link-container">
+                                                <span class="download-link" id="source-{{ outer_index }}">{{ file.source_url }}</span>
+                                                <button class="btn btn-sm btn-copy" onclick="copyLink('source-{{ outer_index }}', this)">复制</button>
+                                            </div>
+                                        {% endif %}
                                     </div>
                                 </td>
                                 <td class="file-actions">
                                     <a href="{{ url_for('download', filepath=current_year + '/' + current_month + '/' + file.name) }}"
                                        class="btn btn-sm btn-download">下载</a>
+                                    <form method="POST" action="{{ url_for('rename_file', filepath=current_year + '/' + current_month + '/' + file.name) }}"
+                                          style="display: inline;" onsubmit="return promptRename(this);">
+                                        <input type="hidden" name="new_name" value="">
+                                        <button type="submit" class="btn btn-sm btn-secondary">重命名</button>
+                                    </form>
                                     <form method="POST" action="{{ url_for('delete_file', filepath=current_year + '/' + current_month + '/' + file.name) }}"
                                           style="display: inline;" onsubmit="return confirm('确定要删除这个文件吗？');">
                                         <button type="submit" class="btn btn-sm btn-delete">删除</button>
@@ -382,7 +433,18 @@
                         {% endfor %}
                     </tbody>
                 </table>
-                <div class="file-count">共 {{ files|length }} 个文件</div>
+                <div class="pagination">
+                    <button class="btn btn-outline" {% if current_page <= 1 %}disabled{% endif %}
+                            onclick="location.href='{{ url_for('files', year=current_year, month=current_month, page=current_page-1) }}'">
+                        ← 上一页
+                    </button>
+                    <div class="page-info">第 {{ current_page }} / {{ total_pages }} 页</div>
+                    <button class="btn btn-outline" {% if current_page >= total_pages %}disabled{% endif %}
+                            onclick="location.href='{{ url_for('files', year=current_year, month=current_month, page=current_page+1) }}'">
+                        下一页 →
+                    </button>
+                </div>
+                <div class="file-count">共 {{ total_files }} 个文件</div>
             {% else %}
                 <div class="empty-state">
                     <div class="icon">📭</div>
@@ -434,6 +496,16 @@
 
                 document.body.removeChild(textArea);
             });
+        }
+
+        function promptRename(form) {
+            const input = form.querySelector('input[name="new_name"]');
+            const newName = prompt('请输入新的文件名（包含扩展名）:');
+            if (!newName) {
+                return false;
+            }
+            input.value = newName.trim();
+            return !!input.value;
         }
     </script>
 </body>

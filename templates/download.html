@@ -80,7 +80,7 @@
             font-weight: 500;
         }
 
-        input[type="text"], input[type="url"] {
+        input[type="text"], input[type="url"], input[type="file"] {
             width: 100%;
             padding: 12px 15px;
             border: 2px solid #e0e0e0;
@@ -180,11 +180,42 @@
                 <input type="url" id="url" name="url" placeholder="https://example.com/file.zip" required>
             </div>
 
+            <div class="form-group">
+                <label for="rename_to">重命名（可选）</label>
+                <input type="text" id="rename_to" name="rename_to" placeholder="例如：report.pdf">
+            </div>
+
+            <div class="form-group">
+                <label for="custom_path">自定义保存路径（可选）</label>
+                <input type="text" id="custom_path" name="custom_path" placeholder="例如：2026/02/临时文件 或 custom/subdir">
+            </div>
+
             <div class="info-box">
                 <strong>保存路径：</strong> /root/filearchiver/{{ now.year }}/{{ now.strftime('%m') }}/
             </div>
 
             <button type="submit" class="btn btn-primary">开始下载</button>
+        </form>
+
+        <div style="height: 30px;"></div>
+
+        <form method="POST" action="{{ url_for('upload_file') }}" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="file">本地上传文件</label>
+                <input type="file" id="file" name="file" required>
+            </div>
+
+            <div class="form-group">
+                <label for="upload_rename">重命名（可选）</label>
+                <input type="text" id="upload_rename" name="rename_to" placeholder="例如：report.pdf">
+            </div>
+
+            <div class="form-group">
+                <label for="upload_custom_path">自定义保存路径（可选）</label>
+                <input type="text" id="upload_custom_path" name="custom_path" placeholder="例如：2026/02/临时文件 或 custom/subdir">
+            </div>
+
+            <button type="submit" class="btn btn-primary">上传文件</button>
         </form>
     </div>
 
